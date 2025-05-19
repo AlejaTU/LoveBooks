@@ -16,6 +16,7 @@ struct SignUpView: View {
     @State private var errorMessage: String = ""
     @State private var showPasswordError: Bool = false
 
+    @Bindable  var model: Model
     
     private var isPasswordValid: Bool {
           password.count >= 8 &&
@@ -34,6 +35,8 @@ struct SignUpView: View {
         
     }
     
+
+    
     private func signUp() async {
         showPasswordError = true
         guard password == confirmPassword else {
@@ -46,6 +49,7 @@ struct SignUpView: View {
                }
         do {
             let result = try await   Auth.auth().createUser(withEmail: email, password: password)
+            try await model.updateDisplayName(for: result.user, displayName: displayName)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -100,5 +104,5 @@ struct SignUpView: View {
 }
 
 #Preview {
-    SignUpView()
+    SignUpView(model: Model())
 }

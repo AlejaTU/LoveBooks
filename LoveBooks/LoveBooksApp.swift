@@ -27,6 +27,8 @@ struct LoveBooksApp: App {
     var body: some Scene {
         WindowGroup {
             SplashView()
+                .environment(Model())
+
         }
     }
 }
