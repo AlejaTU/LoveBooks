@@ -15,6 +15,8 @@ struct SignUpView: View {
     @State private var displayName: String = ""
     @State private var errorMessage: String = ""
     @State private var showPasswordError: Bool = false
+    @State private var goToLogin = false
+
 
     @Bindable  var model: Model
     
@@ -58,50 +60,111 @@ struct SignUpView: View {
     
     
     var body: some View {
-        Form {
-            TextField("Email", text: $email)
-                .textInputAutocapitalization(.never)
-            SecureField("Password", text: $password)
-                .textInputAutocapitalization(.never)
-                .onChange(of: password) { _ in
-                    showPasswordError = true
-                }
-            SecureField("Repetir contraseña", text: $confirmPassword)
-                       .textInputAutocapitalization(.never)
-            if showPasswordError && !password.isEmpty && !isPasswordValid {
-                Text("La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un símbolo.")
-                    .foregroundColor(.red)
-                    .font(.caption)
-                    .padding(.top, 2)
-            }
-            TextField("Display Name", text: $displayName)
-            
-            if !errorMessage.isEmpty {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                    }
-            HStack {
-                Spacer()
-                Button("Sign up") {
-                    Task {
-                        await signUp()
-                        
-                    }
-                }.disabled(!isFormValid)
-                    .buttonStyle(.borderless)
-                
-                
-                Button("Login") {
-                    //usuario va a login
-                }.buttonStyle(.borderless)
-                Spacer()
-            }
-            
-            
-        }
+        NavigationStack {
+                    ZStack {
+                        Color("#FAF8F4").ignoresSafeArea()
 
-    }
-}
+                        VStack(spacing: 30) {
+                            Spacer()
+
+                            Image("logo")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 160)
+                                .cornerRadius(20)
+                                .padding(.bottom, 10)
+
+                            VStack(spacing: 16) {
+                                TextField("Email", text: $email)
+                                    .textInputAutocapitalization(.never)
+                                    .padding()
+                                    .background(Color.white)
+                                    .cornerRadius(10)
+                                    .shadow(radius: 1)
+
+                                SecureField("Contraseña", text: $password)
+                                    .textInputAutocapitalization(.never)
+                                    .padding()
+                                    .background(Color.white)
+                                    .cornerRadius(10)
+                                    .shadow(radius: 1)
+                                    .onChange(of: password) { _ in
+                                        showPasswordError = true
+                                    }
+
+                                SecureField("Repetir contraseña", text: $confirmPassword)
+                                    .textInputAutocapitalization(.never)
+                                    .padding()
+                                    .background(Color.white)
+                                    .cornerRadius(10)
+                                    .shadow(radius: 1)
+
+                                if showPasswordError && !password.isEmpty && !isPasswordValid {
+                                    Text("Debe tener al menos 8 caracteres, una mayúscula, un número y un símbolo.")
+                                        .foregroundColor(.red)
+                                        .font(.caption)
+                                        .padding(.top, 2)
+                                }
+
+                                TextField("Nombre de usuario", text: $displayName)
+                                    .padding()
+                                    .background(Color.white)
+                                    .cornerRadius(10)
+                                    .shadow(radius: 1)
+
+                                if !errorMessage.isEmpty {
+                                    Text(errorMessage)
+                                        .foregroundColor(.red)
+                                        .font(.caption)
+                                }
+                            }
+                            .padding(.horizontal)
+
+                            Button(action: {
+                                Task { await signUp() }
+                            }) {
+                                Text("Crear cuenta")
+                                    .foregroundStyle(Color.black)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(isFormValid ? Color.blue : Color("##9F9280"))
+                                    
+                                    .cornerRadius(12)
+                                    .font(.headline)
+                                    .shadow(radius: 4, x: 0, y: 2)
+                                    .overlay(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .stroke(Color.black.opacity(0.3), lineWidth: 2)
+                                            )
+                            }
+                            .padding(.horizontal)
+                            .disabled(!isFormValid)
+                            .opacity(isFormValid ? 1 : 0.3)
+
+                            Button(action: {
+                                goToLogin = true
+                            }) {
+                                Text("¿Ya tienes cuenta? Inicia sesión")
+                                    .foregroundStyle(Color.blue)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color("#9F9280"))
+                                    .cornerRadius(12)
+                                    .font(.headline)
+                                    .shadow(radius: 4, x: 0, y: 2)
+                            }
+                            .padding(.horizontal)
+
+                            Spacer()
+                        }
+                        .padding()
+                        .navigationDestination(isPresented: $goToLogin) {
+                            LoginView()
+                        }
+                    }
+                }
+            }
+        }
 
 #Preview {
     SignUpView(model: Model())
