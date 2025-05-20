@@ -14,7 +14,29 @@ struct MainView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-                  Text("Bienvenido a LoveBooks 📚")
+            TabView {
+                        TimelineView()
+                            .tabItem {
+                                Label("Inicio", systemImage: "house")
+                            }
+
+                        BooksView()
+                            .tabItem {
+                                Label("Libros", systemImage: "book")
+                            }
+
+                        DiscoverView()
+                            .tabItem {
+                                Label("Descubre", systemImage: "network")
+                            }
+
+                        ProfileView()
+                            .tabItem {
+                                Label("Perfil", systemImage: "person.circle")
+                            }
+                    }
+            /*
+            Text("Bienvenido a LoveBooks 📚")
                       .font(.title)
                       .padding()
 
@@ -30,6 +52,7 @@ struct MainView: View {
                   .padding()
                   .background(Color.red)
                   .cornerRadius(10)
+             */
               }
           }
       }
