@@ -24,10 +24,20 @@ struct LoveBooksApp: App {
     // register app delegate for Firebase setup
       @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
+    @State private var appState = AppState()
+    
     var body: some Scene {
         WindowGroup {
-            SplashView()
-                .environment(Model())
+            ZStack {
+                            switch appState.authStatus {
+                            case .checking:
+                                SplashView()
+                            case .loggedOut:
+                                LoginView()
+                            case .loggedIn:
+                                MainView()
+                            }
+                        }.environment(appState)
 
         }
     }

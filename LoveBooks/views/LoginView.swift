@@ -17,6 +17,13 @@ struct LoginView: View {
     @State private var goToSignUp = false
     @State private var errorMessage: String = ""
     
+    //@Environment private var appState: AppState
+    
+    @Environment(AppState.self) var appState
+    @State private var showSignUp = false
+
+
+    
     private var isFormValid: Bool {
         !email.isEmptyOrWhiteSpace &&
                 !password.isEmptyOrWhiteSpace 
@@ -26,10 +33,11 @@ struct LoginView: View {
     
     private func login() async {
         do {
-         let result = try await   Auth.auth().signIn(withEmail: email, password: password)
+           let _ = try await   Auth.auth().signIn(withEmail: email, password: password)
 
             
             //ir a la pantalla principal
+            appState.authStatus = .loggedIn
         } catch {
             print(error.localizedDescription)
         }
@@ -93,7 +101,8 @@ struct LoginView: View {
 
                         
                                 Button(action: {
-                                goToSignUp = true
+
+                                    showSignUp = true
                             }) {
                                 Text("¿Aún no tienes cuenta?")
                                     .foregroundStyle(Color.blue)
@@ -112,7 +121,7 @@ struct LoginView: View {
                         Spacer()
                     }
                     .padding()
-                    .navigationDestination(isPresented: $goToSignUp) {
+                    .navigationDestination(isPresented: $showSignUp) {
                         SignUpView(model: Model())
                     }
                 }
@@ -122,4 +131,5 @@ struct LoginView: View {
 
 #Preview {
     LoginView()
+        .environment(AppState())
 }

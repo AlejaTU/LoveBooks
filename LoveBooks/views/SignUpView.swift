@@ -15,8 +15,9 @@ struct SignUpView: View {
     @State private var displayName: String = ""
     @State private var errorMessage: String = ""
     @State private var showPasswordError: Bool = false
-    @State private var goToLogin = false
-
+    @Environment(AppState.self) var appState
+    @Environment(\.dismiss) var dismiss
+    @State private var showSuccess = false
 
     @Bindable  var model: Model
     
@@ -52,6 +53,18 @@ struct SignUpView: View {
         do {
             let result = try await   Auth.auth().createUser(withEmail: email, password: password)
             try await model.updateDisplayName(for: result.user, displayName: displayName)
+            appState.authStatus = .loggedOut
+            // ✅ Limpiamos campos
+                   email = ""
+                   password = ""
+                   confirmPassword = ""
+                   displayName = ""
+                   errorMessage = ""
+                   showPasswordError = false
+
+                   // ✅ Mostramos alerta de éxito
+                   showSuccess = true
+
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -60,7 +73,7 @@ struct SignUpView: View {
     
     
     var body: some View {
-        NavigationStack {
+        
                     ZStack {
                         Color("#FAF8F4").ignoresSafeArea()
 
@@ -142,7 +155,7 @@ struct SignUpView: View {
                             .opacity(isFormValid ? 1 : 0.3)
 
                             Button(action: {
-                                goToLogin = true
+                                dismiss()
                             }) {
                                 Text("¿Ya tienes cuenta? Inicia sesión")
                                     .foregroundStyle(Color.blue)
@@ -158,13 +171,18 @@ struct SignUpView: View {
                             Spacer()
                         }
                         .padding()
-                        .navigationDestination(isPresented: $goToLogin) {
-                            LoginView()
+                        .alert("Registro exitoso", isPresented: $showSuccess) {
+                            Button("Iniciar sesión") {
+                                dismiss()
+                            }
+                        } message: {
+                            Text("Tu cuenta ha sido creada correctamente.")
                         }
+                       
                     }
                 }
             }
-        }
+        
 
 #Preview {
     SignUpView(model: Model())

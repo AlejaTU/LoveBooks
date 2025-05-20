@@ -10,43 +10,26 @@ import FirebaseAuth
 import FirebaseCore
 
 struct SplashView: View {
-    @State private var isActive = false
-    @State private var isCheckingAuth = true
-    @State private var isAuthenticated = false
+    @Environment(AppState.self) var appState
     
-    
-    private func checkAuth() async {
-        // Espera 2 segundos para mostrar el logo
-        try? await Task.sleep(nanoseconds: 2_000_000_000)
-        // Comprueba si hay un usuario logueado
-        let user = Auth.auth().currentUser
-        isAuthenticated = user != nil
-        isCheckingAuth = false
-    }
     var body: some View {
-        Group {
-            if isCheckingAuth {
-                // Pantalla de splash con logo
-                VStack {
-                    Spacer()
-                    Image("logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 200, height: 200)
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white)
-                .onAppear {
-                    Task {
-                        await checkAuth()
-                    }
-                }
-            } else {
-                if isAuthenticated {
-                    MainView()
+        ZStack {
+            Color.white.ignoresSafeArea()
+            VStack {
+                Spacer()
+                Image("logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+                Spacer()
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                if Auth.auth().currentUser != nil {
+                    appState.authStatus = .loggedIn
                 } else {
-                    LoginView()
+                    appState.authStatus = .loggedOut
                 }
             }
         }
@@ -55,5 +38,6 @@ struct SplashView: View {
 
 #Preview {
     SplashView()
+        .environment(AppState())
         
 }
