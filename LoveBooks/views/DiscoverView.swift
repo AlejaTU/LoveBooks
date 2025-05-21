@@ -9,20 +9,32 @@ import SwiftUI
 
 struct DiscoverView: View {
     @State private var query = ""
+    @State private var searchText = ""
        @State private var books: [Book] = []
        @State private var isLoading = false
+    
+    @State private var searchTask: DispatchWorkItem?
+
+    
+    
+    
 
        var body: some View {
            NavigationStack {
                VStack {
-                   TextField("Buscar libros...", text: $query)
+                   TextField("Buscar libros...", text: $searchText)
                        .padding()
                        .textFieldStyle(.roundedBorder)
+                       .onChange(of: searchText) {
+                           scheduleSearch()
+                       }
+                       /*
                        .onSubmit {
                            Task {
                                await searchBooks()
                            }
                        }
+                        */
 
                    if isLoading {
                        ProgressView()
@@ -62,6 +74,11 @@ struct DiscoverView: View {
                    .listStyle(.plain)
                }
                .navigationTitle("Descubrir libros")
+           }.task {
+               if books.isEmpty {
+                   query = "fiction"
+                   await searchBooks()
+               }
            }
        }
 
@@ -92,6 +109,24 @@ struct DiscoverView: View {
 
            isLoading = false
        }
+    
+    func scheduleSearch() {
+        searchTask?.cancel()
+
+        let task = DispatchWorkItem {
+            Task {
+                let text = searchText.trimmingCharacters(in: .whitespaces)
+                    query = text.isEmpty ? "fiction" : text
+                
+                await searchBooks()
+            }
+        }
+
+        searchTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: task)
+    }
+    
+    
    }
 
 #Preview {
