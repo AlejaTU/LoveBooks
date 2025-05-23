@@ -27,11 +27,16 @@ struct TimelineView: View {
                 } else {
                     List(reviews) { review in
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(review.title)
-                                .font(.headline)
+                            if !review.title.isEmpty {
+                                Text("🔖 Reseña sobre: \(review.title)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.blue)
+                            }
+
                             Text(review.content)
                                 .font(.body)
-                                .lineLimit(3)
+                                .lineLimit(4)
+
                             Text(review.date.formatted(date: .abbreviated, time: .shortened))
                                 .font(.caption)
                                 .foregroundColor(.gray)
@@ -68,11 +73,11 @@ struct TimelineView: View {
                  })
                  */
             }
-            .onAppear {
-                loadReviews()
-            }.task {
+            .task {
                 await followsVM.fetchFollowedItems()
+                loadReviews()
             }
+            
         }
     }
     
@@ -121,11 +126,17 @@ struct TimelineView: View {
         }
         
         group.notify(queue: .main) {
-            let all = (reviewsFromUsers + reviewsFromBooks)
+            let merged = (reviewsFromUsers + reviewsFromBooks)
+                .reduce(into: [String: Review]()) { dict, review in
+                    if let id = review.id {
+                        dict[id] = review // evita duplicados
+                    }
+                }
+
+            self.reviews = merged.values
                 .sorted(by: { $0.date > $1.date })
-            
-            self.reviews = all
         }
+
     }
     
 }

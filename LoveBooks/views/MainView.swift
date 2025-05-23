@@ -11,6 +11,8 @@ import FirebaseAuth
 
 struct MainView: View {
     @Environment(AppState.self) var appState
+    @State private var showAddReview = false
+      @State private var selectedTab = 0
 
     var body: some View {
         VStack(spacing: 24) {
