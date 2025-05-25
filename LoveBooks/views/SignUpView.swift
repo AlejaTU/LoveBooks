@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseAuth
+import FirebaseStorage
 
 struct SignUpView: View {
     @State private var email: String = ""
@@ -20,6 +21,8 @@ struct SignUpView: View {
     @State private var showSuccess = false
 
     @Bindable  var model: Model
+    @State private var userProfileVM = UserProfileViewModel()
+
     
     private var isPasswordValid: Bool {
           password.count >= 8 &&
@@ -53,6 +56,8 @@ struct SignUpView: View {
         do {
             let result = try await   Auth.auth().createUser(withEmail: email, password: password)
             try await model.updateDisplayName(for: result.user, displayName: displayName)
+            try await userProfileVM.createProfile(username: displayName)
+
             appState.authStatus = .loggedOut
             // ✅ Limpiamos campos
                    email = ""

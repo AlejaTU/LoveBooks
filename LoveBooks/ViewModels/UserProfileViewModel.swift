@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 import FirebaseAuth
+import FirebaseStorage
 
 @MainActor
 @Observable
@@ -54,4 +55,43 @@ class UserProfileViewModel {
             print("❌ Error al obtener el perfil:", error.localizedDescription)
         }
     }
+    
+    
+    func updateProfile(username: String, bio: String, imageData: Data?) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            throw NSError(domain: "No user", code: 401)
+        }
+
+        var photoURL: String? = nil
+
+        if let imageData {
+            let ref = Storage.storage().reference().child("profile_photos/\(uid).jpg")
+            _ = try await ref.putDataAsync(imageData)
+            photoURL = try await ref.downloadURL().absoluteString
+        }
+
+        var data: [String: Any] = [
+            "username": username,
+            "bio": bio
+        ]
+
+        // 👇 Incluimos photoURL aunque sea nil
+        if let url = photoURL {
+            data["photoURL"] = url
+        } else {
+            data["photoURL"] = FieldValue.delete()
+        }
+
+        try await Firestore.firestore()
+            .collection("users")
+            .document(uid)
+            .updateData(data)
+
+        await fetchProfile()
+    }
+
+
+    
+    
+    
 }
