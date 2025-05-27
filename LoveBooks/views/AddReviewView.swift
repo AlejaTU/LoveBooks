@@ -65,9 +65,11 @@ struct AddReviewView: View {
                                 Task {
                                     let success = await reviewVM.publishReview(
                                         bookID: book.id,
-                                        title: title,
+                                        bookTitle: book.title,
+                                        reviewTitle: title,
                                         content: content
                                     )
+
                                     if success {
                                         dismiss()
                                     }

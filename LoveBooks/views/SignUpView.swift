@@ -53,6 +53,11 @@ struct SignUpView: View {
                    errorMessage = "La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un símbolo."
                    return
                }
+        let isAvailable = await userProfileVM.isUsernameAvailable(displayName)
+        guard isAvailable else {
+            errorMessage = "Ese nombre de usuario ya está en uso."
+            return
+        }
         do {
             let result = try await   Auth.auth().createUser(withEmail: email, password: password)
             try await model.updateDisplayName(for: result.user, displayName: displayName)

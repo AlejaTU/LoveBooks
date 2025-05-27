@@ -14,6 +14,9 @@ import FirebaseStorage
 @Observable
 class UserProfileViewModel {
     var profile: UserProfile?
+    var userReviews: [Review] = []
+    var bookTitles: [String: String] = [:] // bookID: bookTitle
+
 
     // Crear perfil al registrarse
     func createProfile(username: String, bio: String = "", photoURL: String? = nil) async throws {
@@ -75,7 +78,7 @@ class UserProfileViewModel {
             "bio": bio
         ]
 
-        // 👇 Incluimos photoURL aunque sea nil
+        
         if let url = photoURL {
             data["photoURL"] = url
         } else {
@@ -89,9 +92,56 @@ class UserProfileViewModel {
 
         await fetchProfile()
     }
+    
+    func isUsernameAvailable(_ username: String) async -> Bool {
+        let db = Firestore.firestore()
+        do {
+            let snapshot = try await db.collection("users")
+                .whereField("username", isEqualTo: username)
+                .getDocuments()
+            
+            // Si no hay ningún documento, el username está disponible
+            return snapshot.documents.isEmpty
+        } catch {
+            print("❌ Error al verificar nombre de usuario:", error.localizedDescription)
+            return false
+        }
+    }
 
 
-    
-    
+
+    func fetchUserReviews() async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+
+        do {
+            let snapshot = try await Firestore.firestore()
+                .collection("reviews")
+                .whereField("userID", isEqualTo: uid)
+                .order(by: "date", descending: true)
+                .getDocuments()
+
+            self.userReviews = try snapshot.documents.compactMap {
+                try $0.data(as: Review.self)
+            }
+
+            // 🔍 Obtener títulos de los libros
+            for review in userReviews {
+                if let bookID = review.bookID, bookTitles[bookID] == nil {
+                    let bookDoc = try await Firestore.firestore()
+                        .collection("books")
+                        .document(bookID)
+                        .getDocument()
+
+                    if let title = bookDoc.data()?["title"] as? String {
+                        bookTitles[bookID] = title
+                    }
+                }
+            }
+
+        } catch {
+            print("❌ Error al obtener reseñas del usuario:", error.localizedDescription)
+        }
+    }
+
     
 }

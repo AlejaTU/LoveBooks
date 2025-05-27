@@ -18,25 +18,29 @@ final class BookReviewsViewModel {
     var errorMessage: String = ""
 
     func fetchReviews(for bookID: String) async {
+        //quitar el works del path de la api para guardar en firebase
+        let cleanID = bookID.components(separatedBy: "/").last ?? bookID
+
         isLoading = true
         errorMessage = ""
 
         do {
             let snapshot = try await Firestore.firestore()
                 .collection("reviews")
-                .whereField("bookID", isEqualTo: bookID)
+                .whereField("bookID", isEqualTo: cleanID)
                 .order(by: "date", descending: true)
                 .getDocuments()
 
-            reviews = snapshot.documents.compactMap { doc in
-                try? doc.data(as: Review.self)
+            self.reviews = try snapshot.documents.compactMap {
+                try $0.data(as: Review.self)
             }
 
+            isLoading = false
         } catch {
-            errorMessage = "Error cargando reseñas."
-            print("❌ Error fetching reviews:", error.localizedDescription)
+            self.errorMessage = "Error al cargar reseñas del libro."
+            print("❌ Error cargando reseñas:", error.localizedDescription)
+            isLoading = false
         }
-
-        isLoading = false
     }
+
 }

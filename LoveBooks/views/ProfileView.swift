@@ -67,6 +67,51 @@ struct ProfileView: View {
                           .frame(height: 5)
                           .padding(.horizontal, 32)
                           .padding(.top, 0)
+                     
+                      
+                      LazyVStack(alignment: .leading, spacing: 0) {
+                          ForEach(userProfileVM.userReviews) { review in
+                              VStack(alignment: .leading, spacing: 6) {
+                                  Text(review.title)
+                                      .font(.headline)
+                                      .foregroundColor(.primary)
+
+                                  Text(review.content)
+                                      .font(.body)
+                                      .foregroundColor(.primary)
+
+                                  HStack {
+                                      Text(review.date.formatted(date: .abbreviated, time: .shortened))
+                                          .font(.caption)
+                                          .foregroundColor(.gray)
+
+                                      Spacer()
+
+                                      if let bookID = review.bookID,
+                                         let bookTitle = userProfileVM.bookTitles[bookID] {
+                                          Text("📚 \(bookTitle)")
+                                              .font(.caption)
+                                              .foregroundColor(.blue)
+                                      }
+
+                                  }
+                              }
+                              .padding(.vertical, 12)
+                              .padding(.horizontal, 16)
+                              .frame(maxWidth: .infinity, alignment: .leading)
+                              .background(Color.clear)
+                              .overlay(
+                                  Divider()
+                                      .padding(.leading, 16),
+                                  alignment: .bottom
+                              )
+                          }
+                      }
+
+
+                      .padding(.horizontal)
+
+                      
                       
                   }
                   .padding()
@@ -95,6 +140,7 @@ struct ProfileView: View {
               }
               .task {
                   await userProfileVM.fetchProfile()
+                  await userProfileVM.fetchUserReviews()
               }
               .alert("¿Cerrar sesión?", isPresented: $showLogoutAlert) {
                   Button("Cancelar", role: .cancel) {}
@@ -121,6 +167,7 @@ struct ProfileView: View {
               if !isPresented {
                   Task {
                       await userProfileVM.fetchProfile()
+                      await userProfileVM.fetchUserReviews()
                   }
               }
           }

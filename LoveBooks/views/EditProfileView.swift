@@ -116,35 +116,28 @@ struct EditProfileView: View {
         isSaving = true
         errorMessage = nil
         
-        guard let uid = Auth.auth().currentUser?.uid else {
-            errorMessage = "No hay usuario autenticado"
+        guard let current = userProfileVM.profile else {
+            errorMessage = "No se pudo cargar el perfil"
             isSaving = false
             return
         }
         
-        var photoURL: String? = nil
-        
-       
-        if let imageData = profileImageData {
-            let ref = Storage.storage().reference().child("profile_photos/\(uid).jpg")
-            do {
-                _ = try await ref.putDataAsync(imageData)
-                photoURL = try await ref.downloadURL().absoluteString
-            } catch {
-                errorMessage = "Error al subir imagen"
+        // Solo comprobar duplicados si ha cambiado
+        if username != current.username {
+            let isAvailable = await userProfileVM.isUsernameAvailable(username)
+            if !isAvailable {
+                errorMessage = "Ese nombre de usuario ya está en uso."
                 isSaving = false
                 return
             }
         }
         
-        let data: [String: Any] = [
-            "username": username,
-            "bio": bio,
-            "photoURL": photoURL ?? FieldValue.delete()
-        ]
-        
         do {
-            try await Firestore.firestore().collection("users").document(uid).updateData(data)
+            try await userProfileVM.updateProfile(
+                username: username,
+                bio: bio,
+                imageData: profileImageData
+            )
             showSuccessAlert = true
         } catch {
             errorMessage = "Error al guardar los cambios"
@@ -153,7 +146,6 @@ struct EditProfileView: View {
         isSaving = false
     }
 }
-
 /*
 #Preview {
     EditProfileView()
