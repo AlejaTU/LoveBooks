@@ -4,8 +4,13 @@
 //
 //  Created by Alejandra Torres on 20/5/25.
 //
-
+import FirebaseAuth
+import FirebaseFirestore
+import FirebaseStorage
 import SwiftUI
+
+
+
 struct DiscoverView: View {
     @State private var query = ""
     @State private var searchText = ""
@@ -95,6 +100,23 @@ struct DiscoverView: View {
                             }
                         }
                         .padding()
+                        NavigationLink {
+                            DiscoverUsersView()
+                        } label: {
+                            HStack {
+                                Image(systemName: "person.2.fill")
+                                Text("Descubre lectores")
+                            }
+                            .foregroundColor(.blue)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(radius: 2)
+                            .padding(.top, 16)
+                        }
+                        .padding(.horizontal)
+
                     }
                 }
             }
@@ -151,6 +173,9 @@ struct DiscoverView: View {
         isLoading = false
     }
 
+  
+
+    
     func scheduleSearch() {
         searchTask?.cancel()
 
@@ -160,7 +185,6 @@ struct DiscoverView: View {
                 query = text.isEmpty ? "fiction" : text
                 
                 showingCategories = false
-
                 await searchBooks()
             }
         }
@@ -168,6 +192,7 @@ struct DiscoverView: View {
         searchTask = task
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: task)
     }
+
 }
 
 #Preview {
