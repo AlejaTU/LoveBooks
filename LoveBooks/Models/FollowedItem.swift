@@ -12,7 +12,8 @@ struct FollowedItem: Identifiable, Codable {
     var id: String? = UUID().uuidString
     var followerID: String
     var type: FollowType
-    var targetID: String
+    var followingUserID: String?  // Usado cuando se sigue a un usuario
+       var followingBookID: String?
     var date: Date
 }
 
