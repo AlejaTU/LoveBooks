@@ -18,7 +18,7 @@ struct AddReviewView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color("#FAF8F4").ignoresSafeArea()
+                Color(.whitebreak).ignoresSafeArea()
 
                 VStack(spacing: 16) {
                     TextField("Título de la reseña", text: $title)

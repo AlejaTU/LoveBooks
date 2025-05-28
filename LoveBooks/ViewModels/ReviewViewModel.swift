@@ -47,20 +47,38 @@ class ReviewViewModel  {
                await saveBookIfNeeded(id: cleanBookID!, title: bookTitle ?? "Sin título")
            }
 
+        let userSnapshot = try? await Firestore.firestore().collection("users").document(uid).getDocument()
+           let userData = userSnapshot?.data()
+           let username = userData?["username"] as? String ?? "Usuario"
+           let photoURL = userData?["photoURL"] as? String
+        
            let review = Review(
                userID: uid,
                bookID: cleanBookID,
                title: reviewTitle,
                content: content,
-               date: Date()
+               date: Date(),
+               username: username,
+                   photoURL: photoURL
            )
         
         
         do {
             // Guarda la reseña
-            let _ = try Firestore.firestore()
-                .collection("reviews")
-                .addDocument(from: review)
+            let docRef = Firestore.firestore().collection("reviews").document()
+            let reviewID = docRef.documentID
+
+            let reviewData: [String: Any] = [
+                "reviewID": reviewID,
+                "userID": uid,
+                "bookID": cleanBookID as Any,
+                "title": reviewTitle,
+                "content": content,
+                "date": Date()
+            ]
+
+            try await docRef.setData(reviewData)
+
 
             // ✅ Incrementa el contador de reseñas del usuario
             try await Firestore.firestore()
@@ -69,6 +87,16 @@ class ReviewViewModel  {
                 .updateData([
                     "reviewsCount": FieldValue.increment(Int64(1))
                 ])
+            try await addReviewToFollowersTimeline(review: Review(
+                id: reviewID,
+                userID: uid,
+                bookID: cleanBookID,
+                title: reviewTitle,
+                content: content,
+                date: Date(),
+                username: username,
+                    photoURL: photoURL
+            ))
 
             isLoading = false
             return true
@@ -82,6 +110,42 @@ class ReviewViewModel  {
             return false
         }
     }
+    private func addReviewToFollowersTimeline(review: Review) async throws {
+        let db = Firestore.firestore()
+
+        // 1. Obtener los seguidores del autor de la reseña
+        let snapshot = try await db.collection("follows")
+            .whereField("type", isEqualTo: "user")
+            .whereField("followingUserID", isEqualTo: review.userID)
+            .getDocuments()
+
+        let followers: [String] = snapshot.documents.compactMap {
+            try? $0.data(as: FollowedItem.self).followerID
+        }
+        let allUserIDs = followers + [review.userID]
+
+        let userSnapshot = try await db.collection("users").document(review.userID).getDocument()
+        let userData = userSnapshot.data()
+        let username = userData?["username"] as? String ?? "Usuario"
+        let photoURL = userData?["photoURL"] as? String
+
+        // 2. Crear copia del review en cada timeline
+        for userID in allUserIDs {
+            let ref = db.collection("users").document(userID).collection("timeline").document()
+            try await ref.setData([
+                "reviewID": review.id ?? UUID().uuidString,
+                "userID": review.userID,
+                "title": review.title,
+                "content": review.content,
+                "date": review.date,
+                "bookID": review.bookID as Any,
+                "bookTitle": review.bookID != nil ? (try? await db.collection("books").document(review.bookID!).getDocument().data()?["title"] as? String ?? "") : nil,
+                "username": username,
+                            "photoURL": photoURL
+            ])
+        }
+    }
+
 
 }
 
