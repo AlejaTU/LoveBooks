@@ -72,15 +72,18 @@ struct ReviewThreadView: View {
 
                 // Ver respuestas
                 if let replies = repliesByReview[reviewID], !replies.isEmpty {
-                    if !expandedReviewIDs.contains(reviewID) {
-                        Button("Ver respuestas (\(replies.count))") {
-                            withAnimation {
-                              _ =  expandedReviewIDs.insert(reviewID)
+                    Button(expandedReviewIDs.contains(reviewID) ? "Ocultar respuestas" : "Ver respuestas (\(replies.count))") {
+                        withAnimation {
+                            if expandedReviewIDs.contains(reviewID) {
+                                expandedReviewIDs.remove(reviewID)
+                            } else {
+                                expandedReviewIDs.insert(reviewID)
                             }
                         }
-                        .font(.caption)
-                        .foregroundColor(.blue)
                     }
+                    .font(.caption)
+                    .foregroundColor(.blue)
+
                 }
 
                 // Mostrar respuestas si está expandido
