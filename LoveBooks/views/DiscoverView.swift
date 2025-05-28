@@ -19,9 +19,9 @@ struct DiscoverView: View {
     @State private var searchTask: DispatchWorkItem?
     @State private var didLoad = false
     @State private var showingCategories = true
-
-
-
+    
+    
+    
     private let categories: [DiscoverCategory] = [
         DiscoverCategory(id: "fiction", title: "Ficción", color: .purple.opacity(0.7), icon: "book.fill", query: "fiction"),
         DiscoverCategory(id: "romance", title: "Románticos", color: .pink.opacity(0.7), icon: "heart.fill", query: "romance"),
@@ -30,7 +30,7 @@ struct DiscoverView: View {
         DiscoverCategory(id: "history", title: "Historia", color: .blue.opacity(0.7), icon: "clock.arrow.circlepath", query: "history"),
         DiscoverCategory(id: "more", title: "Explorar más", color: .gray.opacity(0.3), icon: "ellipsis", query: "all")
     ]
-
+    
     var body: some View {
         NavigationStack {
             VStack {
@@ -40,11 +40,11 @@ struct DiscoverView: View {
                     .onChange(of: searchText) {
                         scheduleSearch()
                     }
-
+                
                 if isLoading {
                     ProgressView().padding()
                 }
-
+                
                 if !showingCategories && !books.isEmpty{
                     List(books) { book in
                         NavigationLink {
@@ -64,7 +64,7 @@ struct DiscoverView: View {
                                         .frame(width: 60, height: 90)
                                         .cornerRadius(8)
                                 }
-
+                                
                                 VStack(alignment: .leading) {
                                     Text(book.title).font(.headline)
                                     Text(book.author).font(.subheadline).foregroundColor(.secondary)
@@ -80,7 +80,7 @@ struct DiscoverView: View {
                             ForEach(categories) { category in
                                 Button {
                                     showingCategories = false
-
+                                    
                                     query = category.query
                                     Task { await searchBooks() }
                                 } label: {
@@ -116,7 +116,7 @@ struct DiscoverView: View {
                             .padding(.top, 16)
                         }
                         .padding(.horizontal)
-
+                        
                         NavigationLink {
                             CommunityListView()
                         } label: {
@@ -124,7 +124,7 @@ struct DiscoverView: View {
                                 Image(systemName: "person.3.fill")
                                     .padding(4)
                                     .clipShape(Circle())
-
+                                
                                 Text("Comunidades")
                                     .font(.headline)
                                     .foregroundColor(.primary)
@@ -137,74 +137,58 @@ struct DiscoverView: View {
                             .shadow(radius: 2)
                             .padding(.top, 16)
                         }.padding(.horizontal)
-
+                        
                     }
                 }
             }
             .navigationTitle("Descubrir libros")
             .toolbar {
-                   if !showingCategories {
-                       ToolbarItem(placement: .topBarLeading) {
-                           Button {
-                               books = []
-                               searchText = ""
-                               query = ""
-                               showingCategories = true
-                           } label: {
-                               Image(systemName: "arrowshape.turn.up.backward")
-                           }
-                       }
-                   }
-               }
+                if !showingCategories {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            books = []
+                            searchText = ""
+                            query = ""
+                            showingCategories = true
+                        } label: {
+                            Image(systemName: "arrowshape.turn.up.backward")
+                        }
+                    }
+                }
+            }
             .task {
                 if !didLoad && books.isEmpty && searchText.isEmpty {
-                        didLoad = true
-                        query = "fiction"
-                        await searchBooks()
+                    didLoad = true
+                    query = "fiction"
+                    await searchBooks()
                 }
             }
         }
     }
-
-    // 🔹 MÉTODOS FUERA DEL BODY
+    
+    
     func searchBooks() async {
         guard !query.isEmpty else { return }
         isLoading = true
 
         do {
-            let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-            let url = URL(string: "https://openlibrary.org/search.json?q=\(encodedQuery)")!
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let result = try JSONDecoder().decode(OpenLibraryResponse.self, from: data)
-
-            books = result.docs.map {
-                Book(
-                    id: $0.key ?? UUID().uuidString,
-                    title: $0.title ?? "Sin título",
-                    author: $0.authorName?.first ?? "Autor desconocido",
-                    coverURL: $0.coverI.flatMap {
-                        URL(string: "https://covers.openlibrary.org/b/id/\($0)-M.jpg")
-                    }
-                )
-            }
+            books = try await BookService.searchBooks(for: query)
         } catch {
             print("❌ Error al buscar libros:", error.localizedDescription)
         }
 
         isLoading = false
     }
-
-  
-
+    
     
     func scheduleSearch() {
         searchTask?.cancel()
 
         let task = DispatchWorkItem {
             Task {
-                let text = searchText.trimmingCharacters(in: .whitespaces)
+                let text = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
                 query = text.isEmpty ? "fiction" : text
-                
+
                 showingCategories = false
                 await searchBooks()
             }
@@ -214,7 +198,10 @@ struct DiscoverView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: task)
     }
 
+
+    
 }
+    
 
 #Preview {
     DiscoverView()

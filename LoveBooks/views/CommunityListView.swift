@@ -74,7 +74,7 @@ struct CommunityListView: View {
 
                 Spacer()
             }
-            .navigationTitle("Comunidades")
+            .navigationTitle("Club de Lectura")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: {
