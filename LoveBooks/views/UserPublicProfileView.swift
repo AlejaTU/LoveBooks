@@ -16,6 +16,8 @@ struct UserPublicProfileView: View {
     @State private var userReviews: [Review] = []
     @State private var isLoading = true
     @State private var followsVM = FollowsViewModel()
+    @State private var userProfileVM = UserProfileViewModel()
+
 
     var body: some View {
         ScrollView {
@@ -38,36 +40,28 @@ struct UserPublicProfileView: View {
                             .clipShape(Circle())
                     }
 
-                    // 👤 Nombre + bio
+                    // datos
                     Text(profile.username).font(.title2).bold()
                     Text(profile.bio).font(.body).foregroundColor(.secondary)
-
-                    // 🔘 Botón de seguir / siguiendo
-                    if let currentUID = Auth.auth().currentUser?.uid, currentUID != userID {
-                        if followsVM.isFollowing(userID: userID) {
-                            Button("Siguiendo") {
-                                Task {
-                                    await followsVM.unfollowUser(userIDToUnfollow: userID)
-                                    await followsVM.fetchFollowedItems()
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.gray)
-                        } else {
-                            Button("Seguir") {
-                                Task {
-                                    await followsVM.followUser(userIDToFollow: userID)
-                                    await followsVM.fetchFollowedItems()
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
+                    HStack(spacing: 24) {
+                        VStack {
+                            Text("\(userProfileVM.profile?.followersCount ?? 0)").bold()
+                            Text("Seguidores").font(.caption)
+                        }
+                        VStack {
+                            Text("\(userProfileVM.profile?.followingCount ?? 0)").bold()
+                            Text("Siguiendo").font(.caption)
+                        }
+                        VStack {
+                            Text("\(userProfileVM.profile?.reviewsCount ?? 0)").bold()
+                            Text("Reseñas").font(.caption)
                         }
                     }
+                 
 
                     Divider()
 
-                    // 📚 Lista de reseñas
+                    //  Lista de reseñas
                     ForEach(userReviews) { review in
                         VStack(alignment: .leading) {
                             Text(review.title).font(.headline)
@@ -88,6 +82,36 @@ struct UserPublicProfileView: View {
             }
         }
         .navigationTitle("Perfil")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if let currentUID = Auth.auth().currentUser?.uid, currentUID != userID {
+                    Button {
+                        Task {
+                            if followsVM.isFollowing(userID: userID) {
+                                await followsVM.unfollowUser(userIDToUnfollow: userID)
+                            } else {
+                                await followsVM.followUser(userIDToFollow: userID)
+                            }
+                            await followsVM.fetchFollowedItems()
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: followsVM.isFollowing(userID: userID) ? "checkmark.circle.fill" : "plus.circle")
+                            Text(followsVM.isFollowing(userID: userID) ? "Siguiendo" : "Seguir")
+                        }
+                        .font(.subheadline.bold())
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .foregroundColor(.white)
+                        .background(followsVM.isFollowing(userID: userID) ? Color.gray : Color.blue)
+                        .clipShape(Capsule())
+                        .shadow(radius: 2)
+                        .animation(.easeInOut(duration: 0.2), value: followsVM.isFollowing(userID: userID))
+                    }
+                }
+            }
+        }
+
         .task {
             await loadData()
         }
