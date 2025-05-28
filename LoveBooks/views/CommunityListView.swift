@@ -26,7 +26,7 @@ struct CommunityListView: View {
     var communityList: some View {
         List {
             ForEach(filteredCommunities) { community in
-                NavigationLink(destination: CommunityDetailView()) {
+                NavigationLink(destination: CommunityDetailView(community: community)) {
                     VStack(alignment: .leading) {
                         Text(community.name)
                             .font(.headline)
@@ -99,4 +99,5 @@ struct CommunityListView: View {
 
 #Preview {
     CommunityListView()
+    
 }
