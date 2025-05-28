@@ -14,6 +14,10 @@ struct ProfileView: View {
       @State private var showLogoutAlert = false
       @State private var userProfileVM = UserProfileViewModel()
     @Environment(AppState.self) var appState
+    @State private var expandedReviewIDs: Set<String> = []
+    @State private var repliesVM = RepliesVM()
+    @State private var showReplySheet = false
+    @State private var selectedReview: Review?
 
 
       var body: some View {
@@ -69,44 +73,27 @@ struct ProfileView: View {
                           .padding(.top, 0)
                      
                       
-                      LazyVStack(alignment: .leading, spacing: 0) {
+                      LazyVStack {
                           ForEach(userProfileVM.userReviews) { review in
-                              VStack(alignment: .leading, spacing: 6) {
-                                  Text(review.title)
-                                      .font(.headline)
-                                      .foregroundColor(.primary)
-
-                                  Text(review.content)
-                                      .font(.body)
-                                      .foregroundColor(.primary)
-
-                                  HStack {
-                                      Text(review.date.formatted(date: .abbreviated, time: .shortened))
-                                          .font(.caption)
-                                          .foregroundColor(.gray)
-
-                                      Spacer()
-
-                                      if let bookID = review.bookID,
-                                         let bookTitle = userProfileVM.bookTitles[bookID] {
-                                          Text("📚 \(bookTitle)")
-                                              .font(.caption)
-                                              .foregroundColor(.blue)
-                                      }
-
+                              ReviewThreadView(
+                                  review: review,
+                                  expandedReviewIDs: $expandedReviewIDs,
+                                  repliesByReview: $repliesVM.repliesByReview,
+                                  onReplyTapped: {
+                                      selectedReview = review
+                                      showReplySheet = true
+                                  }
+                              )
+                              
+                              .sheet(isPresented: $showReplySheet) {
+                                  if let review = selectedReview {
+                                      ReplySheetView(parentReviewID: review.id ?? "")
                                   }
                               }
-                              .padding(.vertical, 12)
-                              .padding(.horizontal, 16)
-                              .frame(maxWidth: .infinity, alignment: .leading)
-                              .background(Color.clear)
-                              .overlay(
-                                  Divider()
-                                      .padding(.leading, 16),
-                                  alignment: .bottom
-                              )
+
                           }
                       }
+
 
 
                       .padding(.horizontal)
@@ -141,6 +128,10 @@ struct ProfileView: View {
               .task {
                   await userProfileVM.fetchProfile()
                   await userProfileVM.fetchUserReviews()
+                  // Nueva línea: cargar replies para cada review
+                      for review in userProfileVM.userReviews {
+                          await repliesVM.loadReplies(for: review.id ?? "")
+                      }
               }
               .alert("¿Cerrar sesión?", isPresented: $showLogoutAlert) {
                   Button("Cancelar", role: .cancel) {}

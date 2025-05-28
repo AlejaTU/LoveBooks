@@ -11,14 +11,18 @@ import SwiftUI
 
 struct UserPublicProfileView: View {
     let userID: String
-
+    
     @State private var userProfile: UserProfile?
     @State private var userReviews: [Review] = []
     @State private var isLoading = true
     @State private var followsVM = FollowsViewModel()
     @State private var userProfileVM = UserProfileViewModel()
-
-
+    @State private var expandedReviewIDs: Set<String> = []
+    @State private var repliesVM = RepliesVM()
+    @State private var showReplySheet = false
+    @State private var selectedReview: Review?
+    
+    
     var body: some View {
         ScrollView {
             if let profile = userProfile {
@@ -39,7 +43,7 @@ struct UserPublicProfileView: View {
                             .frame(width: 100, height: 100)
                             .clipShape(Circle())
                     }
-
+                    
                     // datos
                     Text(profile.username).font(.title2).bold()
                     Text(profile.bio).font(.body).foregroundColor(.secondary)
@@ -57,28 +61,26 @@ struct UserPublicProfileView: View {
                             Text("Reseñas").font(.caption)
                         }
                     }
-                 
-
+                    
+                    
                     Divider()
-
+                    
                     //  Lista de reseñas
                     ForEach(userReviews) { review in
-                        VStack(alignment: .leading) {
-                            Text(review.title).font(.headline)
-                            Text(review.content).font(.body)
-                            Text(review.date.formatted(date: .abbreviated, time: .shortened))
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.clear)
-                        .overlay(
-                            Divider()
-                                .padding(.leading, 16),
-                            alignment: .bottom
+                        ReviewThreadView(
+                            review: review,
+                            expandedReviewIDs: $expandedReviewIDs,
+                            repliesByReview: $repliesVM.repliesByReview,
+                            onReplyTapped: {
+                                selectedReview = review
+                                showReplySheet = true
+                            }
                         )
+                    }
+                    .sheet(isPresented: $showReplySheet) {
+                        if let review = selectedReview {
+                            ReplySheetView(parentReviewID: review.id ?? "")
+                        }
                     }
                 }
                 .padding()
@@ -117,29 +119,43 @@ struct UserPublicProfileView: View {
                 }
             }
         }
-
+        
         .task {
             await userProfileVM.fetchProfile(for: userID)
             await loadData()
+            for review in userReviews {
+                await repliesVM.loadReplies(for: review.id ?? "")
+            }
         }
     }
-
+    
     func loadData() async {
         isLoading = true
         let db = Firestore.firestore()
         do {
             let doc = try await db.collection("users").document(userID).getDocument()
             userProfile = try doc.data(as: UserProfile.self)
-
+            
             let reviewsSnapshot = try await db.collection("reviews")
                 .whereField("userID", isEqualTo: userID)
                 .order(by: "date", descending: true)
                 .getDocuments()
-
-            userReviews = try reviewsSnapshot.documents.compactMap {
-                try $0.data(as: Review.self)
+            
+            var enrichedReviews: [Review] = []
+            
+            for doc in reviewsSnapshot.documents {
+                var review = try doc.data(as: Review.self)
+                
+                if let bookID = review.bookID {
+                    let bookDoc = try await db.collection("books").document(bookID).getDocument()
+                    review.bookTitle = bookDoc["title"] as? String
+                }
+                
+                enrichedReviews.append(review)
             }
-
+            
+            userReviews = enrichedReviews
+            
             await followsVM.fetchFollowedItems()
         } catch {
             print("❌ Error al cargar datos:", error.localizedDescription)

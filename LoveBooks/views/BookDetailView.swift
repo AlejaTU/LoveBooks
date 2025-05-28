@@ -11,6 +11,8 @@ struct BookDetailView: View {
     let book: Book
         @State private var showAddReviewSheet = false
         @State private var bookReviewsVM = BookReviewsViewModel()
+    
+    
 
         var body: some View {
             ScrollView {

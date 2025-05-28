@@ -16,7 +16,8 @@ struct TimelineView: View {
     @State private var showReplySheet = false
     @State private var selectedReview: Review?
     @State private var expandedReviewIDs: Set<String> = []
-    @State private var repliesByReview: [String: [Reply]] = [:]
+    @State private var repliesVM = RepliesVM()
+
 
     var body: some View {
         NavigationStack {
@@ -32,7 +33,7 @@ struct TimelineView: View {
                         ReviewThreadView(
                             review: review,
                             expandedReviewIDs: $expandedReviewIDs,
-                            repliesByReview: $repliesByReview,
+                            repliesByReview: $repliesVM.repliesByReview,
                             onReplyTapped: {
                                 selectedReview = review
                                 showReplySheet = true
@@ -112,7 +113,7 @@ struct TimelineView: View {
     }
 
     func loadReplies(for reviewID: String) async {
-        if repliesByReview[reviewID] != nil {
+        if repliesVM.repliesByReview[reviewID] != nil {
             return // ya se cargaron
         }
 
@@ -137,7 +138,7 @@ struct TimelineView: View {
                 )
             }
 
-            repliesByReview[reviewID] = replies
+            repliesVM.repliesByReview[reviewID] = replies
         } catch {
             print("❌ Error cargando respuestas: \(error.localizedDescription)")
         }

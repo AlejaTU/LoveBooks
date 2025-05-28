@@ -111,35 +111,35 @@ class UserProfileViewModel {
 
 
     func fetchUserReviews() async {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
+        let db = Firestore.firestore()
 
         do {
-            let snapshot = try await Firestore.firestore()
-                .collection("reviews")
-                .whereField("userID", isEqualTo: uid)
+            let snapshot = try await db.collection("reviews")
+                .whereField("userID", isEqualTo: Auth.auth().currentUser?.uid ?? "")
                 .order(by: "date", descending: true)
                 .getDocuments()
 
-            self.userReviews = try snapshot.documents.compactMap {
-                try $0.data(as: Review.self)
+            var reviews: [Review] = []
+
+            for doc in snapshot.documents {
+                var review = try doc.data(as: Review.self)
+
+                // Obtener título del libro si hay bookID
+                if let bookID = review.bookID {
+                    let bookDoc = try await db.collection("books").document(bookID).getDocument()
+                    review.bookTitle = bookDoc["title"] as? String
+                }
+
+                reviews.append(review)
             }
 
-            // 🔍 Obtener títulos de los libros
-            for review in userReviews {
-                if let bookID = review.bookID, bookTitles[bookID] == nil {
-                    let bookDoc = try await Firestore.firestore()
-                        .collection("books")
-                        .document(bookID)
-                        .getDocument()
-
-                    if let title = bookDoc.data()?["title"] as? String {
-                        bookTitles[bookID] = title
-                    }
-                }
+            // Asignar a la propiedad
+            await MainActor.run {
+                self.userReviews = reviews
             }
 
         } catch {
-            print("❌ Error al obtener reseñas del usuario:", error.localizedDescription)
+            print("❌ Error al cargar reseñas del usuario:", error.localizedDescription)
         }
     }
 
