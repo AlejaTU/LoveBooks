@@ -104,7 +104,7 @@ struct DiscoverView: View {
                             DiscoverUsersView()
                         } label: {
                             HStack {
-                                Image(systemName: "person.2.fill")
+                                Image(systemName: "person.fill")
                                 Text("Descubre lectores")
                             }
                             .foregroundColor(.blue)
@@ -116,6 +116,27 @@ struct DiscoverView: View {
                             .padding(.top, 16)
                         }
                         .padding(.horizontal)
+
+                        NavigationLink {
+                            CommunityListView()
+                        } label: {
+                            HStack {
+                                Image(systemName: "person.3.fill")
+                                    .padding(4)
+                                    .clipShape(Circle())
+
+                                Text("Comunidades")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                            }
+                            .foregroundColor(.blue)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(radius: 2)
+                            .padding(.top, 16)
+                        }.padding(.horizontal)
 
                     }
                 }
