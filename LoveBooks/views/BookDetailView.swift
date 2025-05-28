@@ -11,6 +11,9 @@ struct BookDetailView: View {
     let book: Book
         @State private var showAddReviewSheet = false
         @State private var bookReviewsVM = BookReviewsViewModel()
+    @State private var expandedReviewIDs: Set<String> = []
+    @State private var selectedReviewForReply: Review? = nil
+    @State private var showReplySheet = false
     
     
 
@@ -77,18 +80,22 @@ struct BookDetailView: View {
                                 .padding(.top)
 
                             ForEach(bookReviewsVM.reviews) { review in
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(review.title)
-                                        .font(.subheadline.bold())
-                                    Text(review.content)
-                                        .font(.body)
-                                    Text(review.date, style: .date)
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                    Divider()
+                                ReviewThreadView(
+                                    review: review,
+                                    expandedReviewIDs: $expandedReviewIDs,
+                                    repliesByReview: $bookReviewsVM.repliesByReview,
+                                    onReplyTapped: {
+                                        selectedReviewForReply = review
+                                        showReplySheet = true
+                                    }
+                                )
+                                .task {
+                                    if bookReviewsVM.repliesByReview[review.id ?? ""] == nil {
+                                        await bookReviewsVM.loadReplies(for: review.id ?? "")
+                                    }
                                 }
-                                .padding(.vertical, 4)
                             }
+
                         }
                     }
                     .padding(.top)
@@ -109,6 +116,10 @@ struct BookDetailView: View {
             }) {
                 AddReviewView(book: book)
             }
+            .sheet(item: $selectedReviewForReply) { review in
+                ReplySheetView(parentReviewID:  review.id ?? "")
+            }
+
         }
     }
    #Preview {
