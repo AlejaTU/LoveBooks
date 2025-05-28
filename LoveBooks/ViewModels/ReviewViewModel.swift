@@ -74,8 +74,11 @@ class ReviewViewModel  {
                 "bookID": cleanBookID as Any,
                 "title": reviewTitle,
                 "content": content,
-                "date": Date()
+                "date": Date(),
+                "username": username,
+                "photoURL": photoURL as Any
             ]
+
 
             try await docRef.setData(reviewData)
 
