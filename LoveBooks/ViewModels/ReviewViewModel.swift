@@ -57,12 +57,22 @@ class ReviewViewModel  {
         
         
         do {
+            // Guarda la reseña
             let _ = try Firestore.firestore()
                 .collection("reviews")
                 .addDocument(from: review)
 
+            // ✅ Incrementa el contador de reseñas del usuario
+            try await Firestore.firestore()
+                .collection("users")
+                .document(uid)
+                .updateData([
+                    "reviewsCount": FieldValue.increment(Int64(1))
+                ])
+
             isLoading = false
             return true
+
 
         } catch {
             errorMessage = "Error al guardar la reseña. Inténtalo de nuevo."

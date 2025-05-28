@@ -71,6 +71,7 @@ struct BookDetailView: View {
                         } else {
                             Text("Reseñas recientes")
                                 .font(.headline)
+                                .foregroundStyle(Color.gray)
                                 .padding(.top)
 
                             ForEach(bookReviewsVM.reviews) { review in

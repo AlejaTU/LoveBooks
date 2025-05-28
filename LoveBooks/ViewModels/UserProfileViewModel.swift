@@ -143,5 +143,21 @@ class UserProfileViewModel {
         }
     }
 
+    func fetchProfile(for userID: String? = nil) async {
+        let uid = userID ?? Auth.auth().currentUser?.uid
+        guard let uid else { return }
+
+        do {
+            let snapshot = try await Firestore.firestore()
+                .collection("users")
+                .document(uid)
+                .getDocument()
+
+            self.profile = try snapshot.data(as: UserProfile.self)
+        } catch {
+            print("❌ Error al obtener el perfil:", error.localizedDescription)
+        }
+    }
+
     
 }

@@ -70,10 +70,15 @@ struct UserPublicProfileView: View {
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(10)
-                        .shadow(radius: 1)
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.clear)
+                        .overlay(
+                            Divider()
+                                .padding(.leading, 16),
+                            alignment: .bottom
+                        )
                     }
                 }
                 .padding()
@@ -93,6 +98,7 @@ struct UserPublicProfileView: View {
                                 await followsVM.followUser(userIDToFollow: userID)
                             }
                             await followsVM.fetchFollowedItems()
+                            await userProfileVM.fetchProfile(for: userID)
                         }
                     } label: {
                         HStack(spacing: 6) {
@@ -113,6 +119,7 @@ struct UserPublicProfileView: View {
         }
 
         .task {
+            await userProfileVM.fetchProfile(for: userID)
             await loadData()
         }
     }

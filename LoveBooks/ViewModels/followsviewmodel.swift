@@ -16,6 +16,7 @@ class FollowsViewModel {
     
     
     //funcion para seguir user
+    @MainActor
     func followUser(userIDToFollow: String) async {
         guard let currentUserID = Auth.auth().currentUser?.uid else { return }
 
@@ -26,13 +27,23 @@ class FollowsViewModel {
             followingBookID: nil,
             date: Date()
         )
+        let db = Firestore.firestore()
 
         do {
-            _ = try Firestore.firestore()
-                .collection("follows")
-                .addDocument(from: follow)
+            // Guardar el follow
+                   _ = try db.collection("follows").addDocument(from: follow)
 
-            followedUsers.append(userIDToFollow)
+                   // ✅ Incrementar followers del usuario seguido
+                   try await db.collection("users").document(userIDToFollow).updateData([
+                       "followersCount": FieldValue.increment(Int64(1))
+                   ])
+
+                   // ✅ Incrementar following del usuario actual
+                   try await db.collection("users").document(currentUserID).updateData([
+                       "followingCount": FieldValue.increment(Int64(1))
+                   ])
+
+                   followedUsers.append(userIDToFollow)
 
         } catch {
             print("❌ Error al seguir usuario:", error.localizedDescription)
@@ -40,12 +51,13 @@ class FollowsViewModel {
     }
 
     //funcion para dejar de seguir
+    @MainActor
     func unfollowUser(userIDToUnfollow: String) async {
         guard let currentUserID = Auth.auth().currentUser?.uid else { return }
+        let db = Firestore.firestore()
 
         do {
-            let snapshot = try await Firestore.firestore()
-                .collection("follows")
+            let snapshot = try await db.collection("follows")
                 .whereField("followerID", isEqualTo: currentUserID)
                 .whereField("followingUserID", isEqualTo: userIDToUnfollow)
                 .whereField("type", isEqualTo: "user")
@@ -57,10 +69,37 @@ class FollowsViewModel {
 
             followedUsers.removeAll { $0 == userIDToUnfollow }
 
+            //  Decrementar followingCount del actual y followersCount del otro
+            async let decrementCurrentUser: () = decrementCounter(userID: currentUserID, field: "followingCount")
+            async let decrementOtherUser: () = decrementCounter(userID: userIDToUnfollow, field: "followersCount")
+            _ = try await [decrementCurrentUser, decrementOtherUser]
+
         } catch {
             print("❌ Error al dejar de seguir usuario:", error.localizedDescription)
         }
     }
+    private func decrementCounter(userID: String, field: String) async throws {
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(userID)
+
+        _ = try await db.runTransaction({ (transaction, errorPointer) -> Any? in
+            let snapshot: DocumentSnapshot
+            do {
+                snapshot = try transaction.getDocument(userRef)
+            } catch let error {
+                errorPointer?.pointee = error as NSError
+                return nil
+            }
+
+            if let currentValue = snapshot.data()?[field] as? Int, currentValue > 0 {
+                transaction.updateData([field: currentValue - 1], forDocument: userRef)
+            }
+
+            return nil
+        })
+    }
+
+
 
     func isFollowing(userID: String) -> Bool {
         followedUsers.contains(userID)
