@@ -14,8 +14,20 @@ struct BookDetailView: View {
     @State private var expandedReviewIDs: Set<String> = []
     @State private var selectedReviewForReply: Review? = nil
     @State private var showReplySheet = false
+    @State private var userBooksVM = UserBooksViewModel()
+
+    @State private var isFavorite = false
     
-    
+    func toggleFavorite() async {
+        if isFavorite {
+            await userBooksVM.removeFromFavorites(bookID: book.id)
+            isFavorite = false
+        } else {
+            await userBooksVM.addToFavorites(book: book)
+            isFavorite = true
+        }
+    }
+
 
         var body: some View {
             ScrollView {
@@ -37,14 +49,31 @@ struct BookDetailView: View {
                             .overlay(Text("Sin portada").foregroundColor(.white))
                     }
 
-                    // Título y autor
-                    Text(book.title)
-                        .font(.title)
-                        .bold()
+                    HStack {
+                        Text(book.title)
+                            .font(.title)
+                            .bold()
+
+                        Spacer()
+
+                        Button {
+                            Task {
+                                await toggleFavorite()
+                            }
+                        } label: {
+                            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                                .font(.title2)
+                                .foregroundColor(.pink)
+                        }
+                    }
+
 
                     Text("por \(book.author)")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
+                    
+                 
+
 
                     Divider()
 
@@ -105,6 +134,8 @@ struct BookDetailView: View {
                 .padding()
                 .task {
                     await bookReviewsVM.fetchReviews(for: book.id)
+                    isFavorite = await userBooksVM.isFavorite(bookID: book.id)
+
                 }
             }
             .navigationTitle("Libro")
