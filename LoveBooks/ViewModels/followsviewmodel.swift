@@ -44,6 +44,22 @@ class FollowsViewModel {
                    ])
 
                    followedUsers.append(userIDToFollow)
+            let reviewsSnapshot = try await db.collection("reviews")
+                       .whereField("userID", isEqualTo: userIDToFollow)
+                       .getDocuments()
+
+                   for doc in reviewsSnapshot.documents {
+                       var reviewData = doc.data()
+                       reviewData["reviewID"] = doc.documentID
+
+                       try await db.collection("users")
+                           .document(currentUserID)
+                           .collection("timeline")
+                           .document(doc.documentID)
+                           .setData(reviewData)
+                   }
+
+                   print(" Reseñas del seguido añadidas al timeline del seguidor")
 
         } catch {
             print("❌ Error al seguir usuario:", error.localizedDescription)

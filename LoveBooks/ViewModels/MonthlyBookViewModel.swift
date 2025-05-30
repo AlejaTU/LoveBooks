@@ -16,11 +16,14 @@ class MonthlyBookViewModel {
     var isLoading = false
     var errorMessage: String?
     var justMovedToPast = false
+     var members: [UserProfile] = []
+
 
     func fetchCurrentBook(for communityID: String) async {
         isLoading = true
         errorMessage = nil
         let currentMonthID = getCurrentMonthID()
+        
 
         do {
             let ref = Firestore.firestore()
@@ -194,6 +197,31 @@ class MonthlyBookViewModel {
             print("❌ Error al actualizar la participación:", error.localizedDescription)
         }
     }
+    
+    func fetchParticipants(for community: Community) async {
+        guard !community.participants.isEmpty else {
+            members = []
+            return
+        }
+
+        let db = Firestore.firestore()
+        
+        do {
+            members = try await withThrowingTaskGroup(of: UserProfile.self) { group in
+                for uid in community.participants {
+                    group.addTask {
+                        let doc = try await db.collection("users").document(uid).getDocument()
+                        return try doc.data(as: UserProfile.self)
+                    }
+                }
+                return try await group.reduce(into: []) { $0.append($1) }
+            }
+        } catch {
+            print("❌ Error al obtener los miembros: \(error.localizedDescription)")
+            members = []
+        }
+    }
+
 
 
 }

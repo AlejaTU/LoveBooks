@@ -127,6 +127,50 @@ struct CommunityDetailView: View {
                             }
                         }
                     }
+                } else if selectedTab == .members {
+                    if monthlyBookVM.members.isEmpty {
+                        Text("No hay miembros en este club.")
+                            .foregroundColor(.gray)
+                            .padding()
+                            .task {
+                                await monthlyBookVM.fetchParticipants(for: community)
+                            }
+                    } else {
+                        List(monthlyBookVM.members) { user in
+                            HStack {
+                                if let urlString = user.photoURL,
+                                   let url = URL(string: urlString) {
+                                    AsyncImage(url: url) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    } placeholder: {
+                                        ProgressView()
+                                    }
+                                    .frame(width: 40, height: 40)
+                                    .clipShape(Circle())
+                                } else {
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.3))
+                                        .frame(width: 40, height: 40)
+                                }
+
+                                VStack(alignment: .leading) {
+                                    Text(user.username)
+                                        .font(.headline)
+                                    if !user.bio.isEmpty {
+                                        Text(user.bio)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .task {
+                            await monthlyBookVM.fetchParticipants(for: community)
+                        }
+                    }
                 }
 
 
