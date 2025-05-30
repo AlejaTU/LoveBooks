@@ -45,7 +45,7 @@ struct CreateCommunityView: View {
                                     ownerID: userID,
                                     createdAt: Date(),
                                     bookOfTheMonthID: nil,
-                                    participants: []
+                                    participants: [userID]
                                 )
                                 await viewModel.createCommunity(newCommunity)
                                 await viewModel.fetchCommunities()

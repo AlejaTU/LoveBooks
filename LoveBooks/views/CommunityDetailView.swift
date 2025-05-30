@@ -23,6 +23,41 @@ struct CommunityDetailView: View {
     @State private var selectedTab: CommunityTab = .book
     @State private var monthlyBookVM = MonthlyBookViewModel()
     @State private var showSelectBookSheet = false
+    @State private var showPastBooksSheet = false
+    @State private var showNewMonthAlert = false
+
+    @State private var toastMessage: String?
+    @State private var showToast = false
+    @State private var isMember: Bool = false
+
+
+    @ViewBuilder
+    private func joinClubButton() -> some View {
+        Button {
+            Task {
+                await monthlyBookVM.toggleMembership(for: community)
+                isMember.toggle()
+                toastMessage = isMember ? "🎉 Te has unido al club" : "👋 Has salido del club"
+                showToast = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    showToast = false
+                }
+            }
+        } label: {
+            HStack {
+                Image(systemName: isMember ? "checkmark.circle" : "person.badge.plus")
+                Text(isMember ? "Perteneces a este club" : "Unirte al club")
+                    .bold()
+            }
+            .foregroundColor(.white)
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(isMember ? .green : .blue)
+            .cornerRadius(12)
+        }
+        .padding(.horizontal)
+    }
+
 
     var isOwner: Bool {
         community.ownerID == Auth.auth().currentUser?.uid
@@ -42,48 +77,58 @@ struct CommunityDetailView: View {
                 if selectedTab == .book {
                     if monthlyBookVM.isLoading {
                         ProgressView("Cargando libro del mes...")
-                    } else if let book = monthlyBookVM.currentMonthlyBook {
-                        VStack(spacing: 12) {
-                            if let url = book.coverURL {
-                                AsyncImage(url: url) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFit()
-                                } placeholder: {
-                                    ProgressView()
-                                }
-                                .frame(width: 100, height: 140) // Tamaño miniatura
-                                .cornerRadius(8)
-                            }
-
-                            Text(book.title)
-                                .font(.title2.bold())
-                            Text("de \(book.author)")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-
-                            Button("Ver libros anteriores") {
-                                // lógica futura
-                            }
-                            .padding(.top)
-                        }
                     } else {
                         VStack(spacing: 12) {
-                            Text("No se ha elegido libro para este mes.")
-                                .foregroundColor(.gray)
-                            if isOwner {
-                                Button("Elegir libro del mes") {
-                                    showSelectBookSheet = true
+                            //  Mostrar libro si existe
+                            if let book = monthlyBookVM.currentMonthlyBook {
+                                if let url = book.coverURL {
+                                    AsyncImage(url: url) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                    } placeholder: {
+                                        ProgressView()
+                                    }
+                                    .frame(width: 100, height: 140)
+                                    .cornerRadius(8)
                                 }
-                                .buttonStyle(.borderedProminent)
-                                
+
+                                Text(book.title)
+                                    .font(.title2.bold())
+                                Text("de \(book.author)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                //  Si no hay libro actual
+                                Text("No se ha elegido libro para este mes.")
+                                    .foregroundColor(.gray)
+
+                                if isOwner {
+                                    Button("Elegir libro del mes") {
+                                        showSelectBookSheet = true
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                }
+                            }
+
+                            //  Mostrar siempre el botón de unirse
+                            joinClubButton()
+                            // 🔁 Siempre mostrar botón de libros pasados
+                            Button("Ver libros anteriores") {
+                                Task {
+                                    await monthlyBookVM.fetchPastBooks(for: community.id ?? "")
+                                    showPastBooksSheet = true
+                                }
+                            }
+                            .font(.subheadline)
+                            .padding(.top, 8)
+                            .sheet(isPresented: $showPastBooksSheet) {
+                                PastBooksView(books: monthlyBookVM.pastMonthlyBooks)
                             }
                         }
                     }
-                } else {
-                    Text("Aquí irán los miembros.")
-                        .foregroundColor(.gray)
                 }
+
 
                 Spacer()
             }
@@ -100,9 +145,20 @@ struct CommunityDetailView: View {
                     }
                 )
             }
+            .alert("¡Nuevo mes detectado!", isPresented: $showNewMonthAlert) {
+                Button("Vale", role: .cancel) { }
+            } message: {
+                Text("El libro anterior se ha movido a la lista de anteriores. Selecciona uno nuevo para este mes.")
+            }
+
 
             .task {
                 await monthlyBookVM.fetchCurrentBook(for: community.id ?? "")
+                isMember = community.participants.contains(Auth.auth().currentUser?.uid ?? "")
+
+                if monthlyBookVM.justMovedToPast {
+                       showNewMonthAlert = true
+                   }
             }
         }
     }
