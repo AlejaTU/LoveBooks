@@ -8,6 +8,8 @@ import Observation
 @MainActor
 class UserBooksViewModel {
     private let db = Firestore.firestore()
+    var favoriteBooks: [Book] = []
+
     
     // Añadir libro a favoritos
     func addToFavorites(book: Book) async {
@@ -65,5 +67,30 @@ class UserBooksViewModel {
             print("❌ Error al comprobar favorito: \(error.localizedDescription)")
             return false
         }
-    }
+    } 
+    
+    
+    
+    // Obtener lista de libros favoritos
+    func fetchFavorites() async {
+           guard let uid = Auth.auth().currentUser?.uid else { return }
+
+           do {
+               let snapshot = try await db.collection("usersBook")
+                   .document(uid)
+                   .collection("favorites")
+                   .getDocuments()
+
+               let favorites: [UserBook] = snapshot.documents.compactMap { doc in
+                   try? doc.data(as: UserBook.self)
+               }
+
+               self.favoriteBooks = favorites.map { $0.book }
+           } catch {
+               print("❌ Error al obtener favoritos: \(error.localizedDescription)")
+               self.favoriteBooks = []
+           }
+       }
+   
+
 }
