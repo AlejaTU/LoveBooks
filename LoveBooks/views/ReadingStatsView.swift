@@ -27,11 +27,11 @@ struct ReadingStatsView: View {
         var body: some View {
             ScrollView {
                 VStack(spacing: 24) {
-                    Text("📚 Tu progreso de lectura")
+                    Text("📚 Mi progreso de lectura")
                         .font(.title2)
                         .bold()
 
-                    // 🌙 Tarjeta con glassmorphism y progreso circular
+                   
                     ZStack {
                         RoundedRectangle(cornerRadius: 30, style: .continuous)
                             .fill(.ultraThinMaterial)
@@ -44,7 +44,7 @@ struct ReadingStatsView: View {
                             .shadow(radius: 10)
                         
                         VStack(spacing: 12) {
-                            Text("Meta mensual")
+                            Text("Meta del mes")
                                 .font(.headline)
                                 .foregroundColor(.white)
 

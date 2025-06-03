@@ -3,7 +3,7 @@ import SwiftUI
 struct AddReviewView: View {
     @Environment(\.dismiss) private var dismiss
 
-    let book: Book
+    let book: Book?
 
     @State private var title = ""
     @State private var content = ""
@@ -64,8 +64,8 @@ struct AddReviewView: View {
                             Button("Publicar") {
                                 Task {
                                     let success = await reviewVM.publishReview(
-                                        bookID: book.id,
-                                        bookTitle: book.title,
+                                        bookID: book?.id,
+                                        bookTitle: book?.title,
                                         reviewTitle: title,
                                         content: content
                                     )
