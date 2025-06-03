@@ -140,9 +140,28 @@ struct BookDetailView: View {
             }
             .navigationTitle("Libro")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("Guardar en Pendientes") {
+                            Task {
+                                await userBooksVM.addToReadingList(book: book, status: "pending")
+                            }
+                        }
+                        Button("Marcar como Leído") {
+                            Task {
+                                await userBooksVM.addToReadingList(book: book, status: "read")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "bookmark")
+                    }
+                }
+            }
+
             .sheet(isPresented: $showAddReviewSheet, onDismiss: {
                 Task {
-                    await bookReviewsVM.fetchReviews(for: book.id) // actualiza después de añadir reseña
+                    await bookReviewsVM.fetchReviews(for: book.id)
                 }
             }) {
                 AddReviewView(book: book)

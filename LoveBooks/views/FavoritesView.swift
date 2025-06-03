@@ -32,7 +32,7 @@ struct FavoritesView: View {
                 .padding(.vertical, 4)
             }
         }
-        .navigationTitle("Tus Favoritos")
+        .navigationTitle("Mis Favoritos")
         .task {
             await userBooksVM.fetchFavorites()
         }
