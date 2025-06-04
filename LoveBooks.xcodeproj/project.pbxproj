@@ -57,11 +57,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		E8B475E92DD4B37C00806373 /* LoveBooks */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = LoveBooks;
-			sourceTree = "<group>";
-		};
 		E8B475FB2DD4B37F00806373 /* LoveBooksTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = LoveBooksTests;
@@ -70,6 +65,16 @@
 		E8B476052DD4B37F00806373 /* LoveBooksUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = LoveBooksUITests;
+			sourceTree = "<group>";
+		};
+		E8E46BA12DDE10F200EB03E4 /* New Folder */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "New Folder";
+			sourceTree = "<group>";
+		};
+		E8E46BF12DDE110800EB03E4 /* LoveBooks */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LoveBooks;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -126,10 +131,11 @@
 		E8B475DE2DD4B37C00806373 = {
 			isa = PBXGroup;
 			children = (
-				E8B475E92DD4B37C00806373 /* LoveBooks */,
+				E8E46BA12DDE10F200EB03E4 /* New Folder */,
 				E8B475FB2DD4B37F00806373 /* LoveBooksTests */,
 				E8B476052DD4B37F00806373 /* LoveBooksUITests */,
 				E8B475E82DD4B37C00806373 /* Products */,
+				E8E46BF12DDE110800EB03E4 /* LoveBooks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -159,7 +165,8 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				E8B475E92DD4B37C00806373 /* LoveBooks */,
+				E8E46BA12DDE10F200EB03E4 /* New Folder */,
+				E8E46BF12DDE110800EB03E4 /* LoveBooks */,
 			);
 			name = LoveBooks;
 			packageProductDependencies = (
@@ -472,6 +479,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"LoveBooks/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -510,6 +518,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"LoveBooks/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

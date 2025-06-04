@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseAuth
+import FirebaseStorage
 
 struct SignUpView: View {
     @State private var email: String = ""
@@ -20,6 +21,8 @@ struct SignUpView: View {
     @State private var showSuccess = false
 
     @Bindable  var model: Model
+    @State private var userProfileVM = UserProfileViewModel()
+
     
     private var isPasswordValid: Bool {
           password.count >= 8 &&
@@ -50,9 +53,16 @@ struct SignUpView: View {
                    errorMessage = "La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un símbolo."
                    return
                }
+        let isAvailable = await userProfileVM.isUsernameAvailable(displayName)
+        guard isAvailable else {
+            errorMessage = "Ese nombre de usuario ya está en uso."
+            return
+        }
         do {
             let result = try await   Auth.auth().createUser(withEmail: email, password: password)
             try await model.updateDisplayName(for: result.user, displayName: displayName)
+            try await userProfileVM.createProfile(username: displayName)
+
             appState.authStatus = .loggedOut
             // ✅ Limpiamos campos
                    email = ""
@@ -75,7 +85,7 @@ struct SignUpView: View {
     var body: some View {
         
                     ZStack {
-                        Color("#FAF8F4").ignoresSafeArea()
+                        Color(.whitebreak).ignoresSafeArea()
 
                         VStack(spacing: 30) {
                             Spacer()
