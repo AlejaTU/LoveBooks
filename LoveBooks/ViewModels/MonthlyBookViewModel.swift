@@ -170,57 +170,80 @@ class MonthlyBookViewModel {
         return community.participants.contains(userID)
     }
 
-    @MainActor
-    func toggleMembership(for community: Community) async {
-        guard let userID = Auth.auth().currentUser?.uid else { return }
-        
-        if userID == community.ownerID {
-            print("⚠️ El creador no puede abandonar su propio club.")
-            return
-        }
-        
-        let ref = Firestore.firestore().collection("communities").document(community.id ?? "")
-        
-        do {
-            let snapshot = try await ref.getDocument()
-            guard var data = snapshot.data(),
-                  var participants = data["participants"] as? [String] else { return }
 
-            if participants.contains(userID) {
-                participants.removeAll { $0 == userID }
-            } else {
-                participants.append(userID)
-            }
-
-            try await ref.updateData(["participants": participants])
-        } catch {
-            print("❌ Error al actualizar la participación:", error.localizedDescription)
-        }
-    }
     
     func fetchParticipants(for community: Community) async {
-        guard !community.participants.isEmpty else {
-            members = []
-            return
-        }
+         guard let communityId = community.id else {
+             members = []
+             return
+         }
+         let db = Firestore.firestore()
+         
+         do {
+             // 1) Leer el documento completo de la comunidad
+             let communityDoc = try await db
+                 .collection("communities")
+                 .document(communityId)
+                 .getDocument()
+             
+             let data = communityDoc.data() ?? [:]
+             // 2) Extraer el array “participants” (listado de UIDs)
+             let uids = data["participants"] as? [String] ?? []
+             
+             // 3) Si no hay UIDs, vaciamos members y salimos
+             guard !uids.isEmpty else {
+                 members = []
+                 return
+             }
+             
+             // 4) Para cada UID, buscamos “users/<uid>” y convertimos a UserProfile
+             members = try await withThrowingTaskGroup(of: UserProfile.self) { group in
+                 for uid in uids {
+                     group.addTask {
+                         let userDoc = try await db.collection("users").document(uid).getDocument()
+                         return try userDoc.data(as: UserProfile.self)
+                     }
+                 }
+                 return try await group.reduce(into: []) { $0.append($1) }
+             }
+         } catch {
+             print("❌ Error al obtener los miembros:", error.localizedDescription)
+             members = []
+         }
+     }
 
-        let db = Firestore.firestore()
-        
-        do {
-            members = try await withThrowingTaskGroup(of: UserProfile.self) { group in
-                for uid in community.participants {
-                    group.addTask {
-                        let doc = try await db.collection("users").document(uid).getDocument()
-                        return try doc.data(as: UserProfile.self)
-                    }
-                }
-                return try await group.reduce(into: []) { $0.append($1) }
-            }
-        } catch {
-            print("❌ Error al obtener los miembros: \(error.localizedDescription)")
-            members = []
-        }
-    }
+    @MainActor
+       func toggleMembership(for community: Community) async {
+           guard let communityId = community.id,
+                 let userID = Auth.auth().currentUser?.uid else { return }
+           
+           if userID == community.ownerID {
+               print("⚠️ El creador no puede abandonar su propio club.")
+               return
+           }
+           
+           let ref = Firestore.firestore().collection("communities").document(communityId)
+           
+           do {
+               // Leer el array actual desde Firestore
+               let snapshot = try await ref.getDocument()
+               let data = snapshot.data() ?? [:]
+               var participants = data["participants"] as? [String] ?? []
+               
+               if participants.contains(userID) {
+                   // Si ya estaba, lo removemos
+                   participants.removeAll { $0 == userID }
+               } else {
+                   // Si no estaba, lo agregamos
+                   participants.append(userID)
+               }
+               
+               // Actualizar Firestore con el nuevo array
+               try await ref.updateData(["participants": participants])
+           } catch {
+               print("❌ Error al actualizar la participación:", error.localizedDescription)
+           }
+       }
 
 
 

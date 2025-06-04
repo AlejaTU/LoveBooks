@@ -68,7 +68,12 @@ struct TimelineView: View {
             }
             .navigationTitle("Para Ti")
             .sheet(isPresented: $showAddSheet) {
-                AddReviewView(book: nil) // <- Esto es todo lo que necesitas
+                AddReviewView(book: nil) {
+                    Task {
+                        await loadTimelineReviews()
+                    }
+                }
+                
             }
             .sheet(isPresented: $showReplySheet) {
                 if let review = selectedReview {

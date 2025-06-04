@@ -5,6 +5,7 @@ struct AddReviewView: View {
 
     let book: Book?
 
+    let onPublished: () -> Void
     @State private var title = ""
     @State private var content = ""
 
@@ -71,6 +72,7 @@ struct AddReviewView: View {
                                     )
 
                                     if success {
+                                        onPublished()
                                         dismiss()
                                     }
                                 }
@@ -84,11 +86,3 @@ struct AddReviewView: View {
     }
 }
 
-#Preview {
-    AddReviewView(book: Book(
-        id: "OL12345M",
-        title: "El Principito",
-        author: "Antoine de Saint-Exupéry",
-        coverURL: nil
-    ))
-}

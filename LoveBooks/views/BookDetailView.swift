@@ -164,7 +164,12 @@ struct BookDetailView: View {
                     await bookReviewsVM.fetchReviews(for: book.id)
                 }
             }) {
-                AddReviewView(book: book)
+                AddReviewView(book: book, onPublished: {
+                    // Este closure se ejecuta justo después de que AddReviewView publique con éxito
+                    Task {
+                        await bookReviewsVM.fetchReviews(for: book.id)
+                    }
+                })
             }
             .sheet(item: $selectedReviewForReply) { review in
                 ReplySheetView(parentReviewID:  review.id ?? "")
